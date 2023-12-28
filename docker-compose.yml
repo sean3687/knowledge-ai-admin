@@ -3,12 +3,15 @@ version: '3.8'
 services:
   web:
     build: .
+    volumes:
+      - .:/app
     ports:
       - "8000:8000"
     depends_on:
       - db
     environment:
       - DATABASE_URL=postgresql://admin:sean0305@db/admin-db
+    command: uvicorn app.main:app --host 0.0.0.0 --reload
 
   db:
     image: postgres:13

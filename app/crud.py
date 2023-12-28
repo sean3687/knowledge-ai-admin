@@ -30,3 +30,6 @@ def create_feedback(db: Session, feedback_data: schemas.FeedbackCreate):
 
 def get_feedback_list(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Feedback).offset(skip).limit(limit).all()
+
+def get_conversation(db :Session, chat_id: int):
+    return db.query(models.Chat).filter(models.Chat.chat_id == chat_id).first()

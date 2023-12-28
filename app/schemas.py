@@ -24,7 +24,6 @@ class ChatFeedback(BaseModel):
     user_feedback_string: str
     chat_title: str
     chat_array: Any
-    
 
 class FeedbackOut(BaseModel):
     id: int
@@ -33,3 +32,12 @@ class FeedbackOut(BaseModel):
     user_feedback_like: str
     user_feedback_string: str
     created_at: datetime = None
+
+class Chat(BaseModel):
+    id: int
+    chat_id: int
+    chat_title: str
+    chat_array: Any
+    marked_index: int
+    user_feedback_like: str
+    user_feedback_string: str
