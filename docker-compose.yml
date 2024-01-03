@@ -11,7 +11,7 @@ services:
       - db
     environment:
       - DATABASE_URL=postgresql://admin:sean0305@db/admin-db
-    command: uvicorn app.main:app --host 0.0.0.0 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   db:
     image: postgres:13
