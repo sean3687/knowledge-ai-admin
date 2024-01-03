@@ -65,7 +65,7 @@ async def get_token(auth_code: AuthCode):
     token_endpoint = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
     client_id = "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD"  # Replace with your client ID
     client_secret = "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50"  # Replace with your client secret
-    redirect_uri = "http://localhost:3000/profile/autorize_quickbook/"  # Replace with your redirect URI
+    redirect_uri = "https://klib-accounting.vercel.app/profile/autorize_quickbook/"  # Replace with your redirect URI
 
     auth_header = 'Basic ' + base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     headers = {
