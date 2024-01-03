@@ -35,7 +35,7 @@ app.add_middleware(
 auth_client = AuthClient(
     "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD",
     "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50",
-    "http://localhost:3000/profile/autorize_quickbook/",
+    "https://klib-accounting.vercel.app/profile/autorize_quickbook/",
     "sandbox" 
 )
 scopes = [Scopes.ACCOUNTING]
