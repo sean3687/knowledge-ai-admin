@@ -12,13 +12,14 @@ USER myuser
 ENV APP_HOME=/home/myuser/app
 WORKDIR $APP_HOME
 
-# Your existing steps to copy requirements and install
-COPY requirements.txt /app/
-WORKDIR /app
+# Copy the requirements.txt first to leverage Docker cache
+COPY requirements.txt $APP_HOME/
+
+# Install Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy the current directory contents into the container at /app
-COPY . /app/
+# Copy the current directory contents into the container at $APP_HOME
+COPY . $APP_HOME/
 
 # Run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
