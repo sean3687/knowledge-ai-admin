@@ -1,11 +1,16 @@
-# Assuming you're using a Python-based image
-FROM python:3.8
+# Use a specific version of Python image for consistency
+FROM python:3.8-slim
 
-# Update and install necessary dependencies
-RUN apt-get update && apt-get install -y gcc python3-dev
+# Install dependencies required for building Python packages
+RUN apt-get update && apt-get install -y gcc libpq-dev
 
-# If you still face issues related to missing headers
-# RUN apt-get install -y linux-headers-$(uname -r)
+# Using a non-root user for better security
+RUN useradd -m myuser
+USER myuser
+
+# Set an environment variable to store the directory where the app is installed
+ENV APP_HOME=/home/myuser/app
+WORKDIR $APP_HOME
 
 # Your existing steps to copy requirements and install
 COPY requirements.txt /app/

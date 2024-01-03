@@ -1,5 +1,8 @@
+import httpx
+import base64
+import json
 from typing import Optional, List
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, APIRouter
 from fastapi.params import Body
 from pydantic import BaseModel
 from fastapi import FastAPI, Depends, HTTPException
@@ -12,19 +15,28 @@ from intuitlib.client import AuthClient
 from intuitlib.enums import Scopes
 from starlette.datastructures import URL
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
-
+router = APIRouter()
+app.include_router(router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 
 auth_client = AuthClient(
     "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD",
     "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50",
     "http://localhost:3000/profile/autorize_quickbook/",
-    "sandbox"  # "sandbox" or "production"
+    "sandbox" 
 )
 scopes = [Scopes.ACCOUNTING]
 
@@ -33,7 +45,7 @@ models.Base.metadata.create_all(bind=database.engine)
 
 class AuthCode(BaseModel):
     code: str
-    realmId: str
+    realm_id: str
 
 @app.get("/login_quickbooks/")
 async def login_quickbooks():
@@ -43,10 +55,37 @@ async def login_quickbooks():
     return {"auth_url": auth_url}  # Redirect to this URL
 
 @app.post("/autorize_quickbook/")
-async def auth(auth_code: AuthCode, ):
-    token = await auth_client.get_bearer_token(auth_code, )
-    # Now you have the access token, you can fetch user info, etc.
-    return {"token": token}
+async def auth(auth_code: AuthCode ):
+    response = auth_client.get_bearer_token(auth_code.code)
+    print(response)
+    return {"access_token": response}
+
+@app.post("/get_token")
+async def get_token(auth_code: AuthCode):
+    token_endpoint = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
+    client_id = "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD"  # Replace with your client ID
+    client_secret = "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50"  # Replace with your client secret
+    redirect_uri = "http://localhost:3000/profile/autorize_quickbook/"  # Replace with your redirect URI
+
+    auth_header = 'Basic ' + base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': auth_header
+    }
+    payload = {
+        'code': auth_code.code,
+        'redirect_uri': redirect_uri,
+        'grant_type': 'authorization_code'
+    }
+    async with httpx.AsyncClient() as client:
+        r = await client.post(token_endpoint, data=payload, headers=headers)
+        if r.status_code != 200:
+            raise HTTPException(status_code=r.status_code, detail=r.text)
+        bearer_raw = r.json()
+
+        # Extract the fields you need from bearer_raw and return
+        return bearer_raw  # Or a subset of this data
 
 @app.get("/get_company_info/")
 async def get_company_info(request: Request):
