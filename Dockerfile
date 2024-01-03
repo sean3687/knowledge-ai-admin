@@ -1,25 +1,19 @@
-# Use a specific version of Python image for consistency
+# Assuming you're using a Python-based image
 FROM python:3.8-slim
 
-# Install dependencies required for building Python packages
-RUN apt-get update && apt-get install -y gcc libpq-dev
+# Update and install necessary dependencies
+RUN apt-get update && apt-get install -y gcc python3-dev
 
-# Using a non-root user for better security
-RUN useradd -m myuser
-USER myuser
+# If you still face issues related to missing headers
+# RUN apt-get install -y linux-headers-$(uname -r)
 
-# Set an environment variable to store the directory where the app is installed
-ENV APP_HOME=/home/myuser/app
-WORKDIR $APP_HOME
-
-# Copy the requirements.txt first to leverage Docker cache
-COPY requirements.txt $APP_HOME/
-
-# Install Python dependencies
+# Your existing steps to copy requirements and install
+COPY requirements.txt /app/
+WORKDIR /app
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy the current directory contents into the container at $APP_HOME
-COPY . $APP_HOME/
+# Copy the current directory contents into the container at /app
+COPY . /app/
 
 # Run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
