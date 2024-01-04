@@ -31,7 +31,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-
 auth_client = AuthClient(
     "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD",
     "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50",
