@@ -55,7 +55,7 @@ async def login_quickbooks():
 
 @app.post("/autorize_quickbook/")
 async def auth(auth_code: AuthCode ):
-    response = auth_client.get_bearer_token(auth_code.code)
+    response = auth_client.get_bearer_token(auth_code = auth_code.code, realm_id=auth_code.realm_id)
     print(response)
     return {"access_token": response}
 
@@ -85,6 +85,12 @@ async def get_token(auth_code: AuthCode):
 
         # Extract the fields you need from bearer_raw and return
         return bearer_raw  # Or a subset of this data
+    
+@app.get("/update_access_token/")
+async def update_access_token(refresh_token: str):
+    
+    return
+    
 
 @app.get("/get_company_info/")
 async def get_company_info(request: Request):
