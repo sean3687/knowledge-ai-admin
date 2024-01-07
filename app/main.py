@@ -46,6 +46,9 @@ models.Base.metadata.create_all(bind=database.engine)
 class AuthCode(BaseModel):
     code: str
     realm_id: str
+    
+class RefreshToken(BaseModel):
+    refresh_token: str
 
 @app.get("/login_quickbooks/")
 async def login_quickbooks():
@@ -53,12 +56,6 @@ async def login_quickbooks():
     print("Please visit the following URL to authorize your app:")
     print(auth_url)
     return {"auth_url": auth_url}  # Redirect to this URL
-
-@app.post("/autorize_quickbook/")
-async def auth(auth_code: AuthCode ):
-    response = auth_client.get_bearer_token(auth_code.code)
-    print(response)
-    return {"access_token": response}
 
 @app.post("/get_token")
 async def get_token(auth_code: AuthCode):
@@ -86,6 +83,38 @@ async def get_token(auth_code: AuthCode):
 
         # Extract the fields you need from bearer_raw and return
         return bearer_raw  # Or a subset of this data
+    
+@app.post("/get_bearer_token_from_refresh")
+async def get_bearer_token_from_refresh(refresh_token: RefreshToken):
+    token_endpoint = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
+    client_id = "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD"  # Replace with your client ID
+    client_secret = "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50"  # Replace with your client secret
+    credentials = f"{client_id}:{client_secret}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': f'Basic {encoded_credentials}'
+    }
+    
+    print(refresh_token.refresh_token)
+    
+    data = {
+    'grant_type': 'refresh_token',
+    'refresh_token': refresh_token.refresh_token
+}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_endpoint, data=data, headers=headers)
+
+        if response.status_code == 200:
+            # Successfully refreshed the token
+            return (response.json())
+        else:
+            # Failed to refresh the token
+            return (f"Failed to refresh tokens: {response.text}")
+    
 
 @app.get("/get_company_info/")
 async def get_company_info(request: Request):
