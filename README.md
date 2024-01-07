@@ -2,6 +2,7 @@
 # CPAL-admin-backend
 
 This is separate backend service from chitchatrabbit. 
+API description can found here : https://docs.google.com/document/d/1f2FzzFnSCvLs42ckZ3pGZH3N1ku5OTeZHAJPlPW2hz4/edit
 
 # How to run Docker container locally
 
