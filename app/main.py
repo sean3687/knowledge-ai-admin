@@ -31,7 +31,6 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-
 auth_client = AuthClient(
     "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD",
     "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50",
@@ -114,7 +113,6 @@ async def get_bearer_token_from_refresh(refresh_token: RefreshToken):
         else:
             # Failed to refresh the token
             return (f"Failed to refresh tokens: {response.text}")
-    
 
 @app.get("/get_company_info/")
 async def get_company_info(request: Request):
