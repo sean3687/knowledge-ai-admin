@@ -1,6 +1,7 @@
 import httpx
 import base64
 import json
+import os
 from typing import Optional, List
 from fastapi import FastAPI, Depends, Request, APIRouter
 from fastapi.params import Body
@@ -16,9 +17,11 @@ from intuitlib.enums import Scopes
 from starlette.datastructures import URL
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
 
 
+load_dotenv()
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
 router = APIRouter()
@@ -31,12 +34,19 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+client_id = os.getenv("QUICKBOOKS_CLIENT_ID")
+client_secret = os.getenv("QUICKBOOKS_CLIENT_SECRET")
+base_url = os.getenv("QUICKBOOKS_BASE_URL")
+base_auth_url = os.getenv("QUICKBOOKS_OAUTH_URL")
+
+
 auth_client = AuthClient(
     "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD",
     "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50",
     "https://klib-accounting.vercel.app/profile/autorize_quickbook/",
     "sandbox" 
 )
+
 scopes = [Scopes.ACCOUNTING]
 
 
@@ -58,51 +68,41 @@ async def login_quickbooks():
 
 @app.post("/get_token")
 async def get_token(auth_code: AuthCode):
-    token_endpoint = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
-    client_id = "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD"  # Replace with your client ID
-    client_secret = "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50"  # Replace with your client secret
-    redirect_uri = "https://klib-accounting.vercel.app/profile/autorize_quickbook/"  # Replace with your redirect URI
-
+    token_endpoint = base_auth_url+ "/v1/tokens/bearer"
+    redirect_uri = "https://klib-accounting.vercel.app/profile/autorize_quickbook/" 
     auth_header = 'Basic ' + base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': auth_header
     }
-    payload = {
+    data = {
         'code': auth_code.code,
         'redirect_uri': redirect_uri,
         'grant_type': 'authorization_code'
     }
     async with httpx.AsyncClient() as client:
-        r = await client.post(token_endpoint, data=payload, headers=headers)
+        r = await client.post(token_endpoint, data=data, headers=headers)
         if r.status_code != 200:
             raise HTTPException(status_code=r.status_code, detail=r.text)
         bearer_raw = r.json()
 
-        # Extract the fields you need from bearer_raw and return
-        return bearer_raw  # Or a subset of this data
+        return bearer_raw  
     
 @app.post("/get_bearer_token_from_refresh")
 async def get_bearer_token_from_refresh(refresh_token: RefreshToken):
-    token_endpoint = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
-    client_id = "AB5NRJWFzxcviA6iUeJ62G7wpT1NdJYFlg3rGXogomoICL6aaD"  # Replace with your client ID
-    client_secret = "PS5nk7fSrTm63eAVtzx17cOeNUYeg5Pgpp2BGd50"  # Replace with your client secret
+    token_endpoint = base_auth_url +"/v1/tokens/bearer"
     credentials = f"{client_id}:{client_secret}"
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
-
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': f'Basic {encoded_credentials}'
     }
-    
-    print(refresh_token.refresh_token)
-    
     data = {
     'grant_type': 'refresh_token',
     'refresh_token': refresh_token.refresh_token
-}
+    }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(token_endpoint, data=data, headers=headers)
@@ -114,14 +114,32 @@ async def get_bearer_token_from_refresh(refresh_token: RefreshToken):
             # Failed to refresh the token
             return (f"Failed to refresh tokens: {response.text}")
 
-@app.get("/get_company_info/")
-async def get_company_info(request: Request):
-    access_token = request.headers.get('Authorization')
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Access token is missing")
+@app.post("/get_company_info/")
+async def get_company_info(auth_code: AuthCode):
+    # Construct the query
+    query = "SELECT * FROM CompanyInfo"
 
-    # Assuming auth_client is already configured elsewhere in your code
-    return auth_client.client.get_company_info(access_token)
+    # Construct the full endpoint URL
+    token_endpoint = f"{base_url}/v3/company/{auth_code.realm_id}/query?query={query}"
+
+    # Implement the logic to obtain the access token using auth_code
+    # This is an example and needs to be replaced with actual token acquisition logic
+    access_token = auth_code.code
+
+    # Set up the headers
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json"
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.get(token_endpoint, headers=headers)
+
+        if response.status_code == 200:
+            # Successfully refreshed the token
+            return (response.json())
+        else:
+            # Failed to refresh the token
+            return (f"Failed to refresh tokens: {response.text}")
 
 @app.get("/drop_chat_table/")
 def drop_chat_table():
